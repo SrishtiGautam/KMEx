@@ -1,0 +1,15 @@
+name: kmex
+channels:
+  - anaconda
+  - pytorch
+  - defaults
+dependencies:
+  - numpy=1.19
+  - python=3.8.12
+  - pytorch
+  - matplotlib=3.5.1
+  - torchvision
+  - tqdm
+  - sklearn
+  - umap
+  - seaborn
