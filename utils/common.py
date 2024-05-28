@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 from utils.prp import *
-from utils.model_february import *
+from utils.model import *
 from utils.dataloader_nrm import NRM
 
 from tqdm import tqdm
@@ -369,7 +369,6 @@ def train(
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-#            if 'PROTOVAE' not in title:
             scheduler.step()
 
             m_loss += float(loss.detach().cpu().numpy())
@@ -670,119 +669,3 @@ def plot_umap(
     plt.close()
 
 
-##########################################################################
-
-from sklearn.metrics import silhouette_score,davies_bouldin_score
-
-def new_diversity(model, prt, classes, embed, label):
-    distances = torch.cdist( embed, prt )**2 + 1e-20
-
-    pred = distances.argmin(1).detach().cpu().numpy()
-    pred = np.array(classes).astype(int)[pred]
-    acc = accuracy(label.detach().cpu().numpy(), pred )*100
-
-    # prototype_label_identity = torch.FloatTensor(np.eye(model.K)[classes])[:,label].T
-    # Because we only do per classes:
-    prototype_label_identity = torch.nn.functional.one_hot(torch.LongTensor(classes))[:,label].T
-
-    print("# calculate cluster cost = Inertia of Kmeans")
-    prototypes_of_correct_class = prototype_label_identity
-    cluster_cost = float((distances / prototypes_of_correct_class).min(-1)[0].mean())
-
-    print("# calculate separation cost")
-    prototypes_of_wrong_class = (1-prototype_label_identity)
-    separation_cost = float( (distances / prototypes_of_wrong_class).min(-1)[0].mean())
-
-    print("# calculate ratio cluster cost/separation cost")
-    cost_ratio = float( ( (distances / prototypes_of_correct_class).min(-1)[0] / (distances / prototypes_of_wrong_class).min(-1)[0] ).mean() )
-
-    print("# calculate separation cost within class")
-    prototypes_of_correct_class = prototype_label_identity[:]
-    separation_cost_per_class = float((distances * prototypes_of_correct_class).max(-1)[0].mean())
-
-    print("# calculate ratio cluster cost/separation cost within class")
-    cost_ratio_per_class = float( ( ( distances / prototypes_of_correct_class ).min(-1)[0] / (distances * prototypes_of_correct_class).max(-1)[0] ).mean() )
-
-    print("# calculate Silhouette and Davies-Bouldin")
-    np_embed = embed.detach().cpu().numpy()
-    pred = distances.argmin(-1).detach().cpu().numpy()
-    sil = 0#silhouette_score(np_embed,pred)
-    dbs = 0#davies_bouldin_score(np_embed,pred)
-
-    print("# calculate Silhouette and Davies-Bouldin per class")
-    label = np.array(label).astype(int)
-    classes = np.array(classes).astype(int)
-    cls_sil,cls_dbs = 0,0
-#    if prt.shape[0] != model.K:
-#        for k in range(model.K):
-#            e_selec = label == k
-#            k_selec = classes == k
-
-#            pred = distances[e_selec][:,k_selec].argmin(-1).detach().cpu().numpy()
-#            cls_sil += silhouette_score(np_embed[e_selec],pred) / model.K
-#            cls_dbs += davies_bouldin_score(np_embed[e_selec],pred) / model.K
-
-#    print("# calculate log likelihood of a standard GMM")
-#    gmm = GaussianMixture(
-#        n_components=prt.shape[0],
-#        n_features=model.LATENT,
-#        covariance_type="diag",
-#        eps=1.e-3,
-#        init_params="kmeans",
-#        mu_init=prt.cpu()[None,:],
-#        var_init=torch.ones(prt.shape).cpu()[None,:]
-#    )
-#    gmm.fit(embed[:,None,:], n_iter=100, fit_var=False)
-
-    std_gmm_llk = 0#float(gmm.log_likelihood)
-    std_gmm_bic = 0#float(gmm.bic(embed))
-
-#    print("# calculate log likelihood of a GMM with diag covariance")
-#    gmm = GaussianMixture(
-#        n_components=prt.shape[0],
-#        n_features=model.LATENT,
-#        covariance_type="diag",
-#        eps=1.e-3,
-#        init_params="kmeans",
-#        mu_init=prt.cpu()[None,:],
-##        var_init=torch.ones(prt.shape).cpu()[None,:]
-#    )
-#    gmm.fit(embed[:,None,:], n_iter=100, fit_var=True)
-
-    diag_gmm_llk = 0#float(gmm.log_likelihood)
-    diag_gmm_bic = 0#float(gmm.bic(embed))
-
-    print("# calculate log likelihood of a GMM with spherical covariance")
-    gmm = GaussianMixture(
-        n_components=prt.shape[0],
-        n_features=model.LATENT,
-        covariance_type="spherical",
-        eps=1.e-3,
-        init_params="kmeans",
-        mu_init=prt.cpu()[None,:],
-#        var_init=torch.ones(prt.shape).cpu()[None,:]
-    )
-    gmm.fit(embed[:,None,:], n_iter=100, fit_var=True)
-
-    sph_gmm_llk = float(gmm.log_likelihood)
-    sph_gmm_bic = float(gmm.bic(embed))
-
-    print(model.acc, acc, cluster_cost, separation_cost, cost_ratio, separation_cost_per_class, cost_ratio_per_class, sil,dbs, cls_sil,cls_dbs, std_gmm_llk, std_gmm_bic, diag_gmm_llk, diag_gmm_bic, sph_gmm_llk, sph_gmm_bic)
-
-    return model.acc, acc, cluster_cost, separation_cost, cost_ratio, separation_cost_per_class, cost_ratio_per_class, sil,dbs, cls_sil,cls_dbs, std_gmm_llk, std_gmm_bic, diag_gmm_llk, diag_gmm_bic, sph_gmm_llk, sph_gmm_bic
-
-
-def diversity(title, model, prt, classes, embed, label):
-    print('\n> Diversity',title)
-    model.eval()
-
-    embed = embed.cpu()
-    label = label.cpu()
-
-    prt = prt.detach().cpu()
-    classes = classes.detach().cpu().numpy().astype(int).tolist()
-
-    model.diversity[title] = new_diversity(model, prt, classes, embed, label)
-
-
-###################################################################################################

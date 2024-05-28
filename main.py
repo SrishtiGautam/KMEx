@@ -140,7 +140,6 @@ cf.plot_prt_img(model,ROOT_FLD,True)
 
 
 ## Computing diversity
-# ev.diversity(TITLE,model,cf.push_loader,True)
 ev.diversity(TITLE,model,cf.test_loader,False)
 
 

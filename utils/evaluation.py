@@ -216,16 +216,9 @@ def diversity(
 
     RATIO = np.zeros((7, 4, 5, 2))
     for d, DATASET in enumerate([model.DATASET]):
-        #    if DATASET == 'celeba':
-        #    if DATASET != args.dataset:
-        #        continue
-        #    _,push_loader,_ = bd.build_loader(DATASET, "RESNET34", BATCH=128)
         print('')
 
         for a, ARCHITECTURE in enumerate(['RESNET34'][:]):
-            #        if ARCHITECTURE != args.archi:
-            #        if a == 0:
-            #            continue
             for r in range(1):
                 RUN = str(r)
                 if ARCHITECTURE == 'RESNET34':

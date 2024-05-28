@@ -7,7 +7,7 @@ import torchvision
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
-from utils.model_february import *
+from utils.model import *
 from utils.dataloader_qd import load_QuickDraw
 from utils.dataloader_nrm import NRM
 from utils.dataloader_celeba import CelebA
